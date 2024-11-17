@@ -3,18 +3,14 @@ import User from '../models/User.js';
 import { signToken, AuthenticationError } from '../utils/auth.js';
 
 interface AddUserArgs {
-    input: {
         username: string;
         email: string;
         password: string;
-    }
 }
 
 interface LoginArgs {
-    input: {
         email: string;
         password: string;
-    }
 }
 
 interface SaveBookArgs {
@@ -37,7 +33,7 @@ interface RemoveBookArgs {
         user: async () => {
             return User.find().populate('savedBooks');
         },
-        me: async (_: any, context: any) => {
+        me: async (_parent: any, _args: any, context: any) => {
             if (context.user) {
                 const userData = await User.findOne({ _id: context.user._id })
                     .select('-__v -password')
@@ -50,14 +46,14 @@ interface RemoveBookArgs {
         },
     },
     Mutation: {
-        login: async (_: any, { input }: LoginArgs) => {
-            const user = await User.findOne({ email: input.email });
+        loginUser: async (_parent: any, { email, password }: LoginArgs) => {
+            const user = await User.findOne({ email });
 
             if (!user) {
                 throw new AuthenticationError('Incorrect credentials');
             }
 
-            const correctPw = await user.isCorrectPassword(input.password);
+            const correctPw = await user.isCorrectPassword(password);
 
             if (!correctPw) {
                 throw new AuthenticationError('Incorrect credentials');
@@ -68,14 +64,14 @@ interface RemoveBookArgs {
             return { token, user };
         },
 
-        addUser: async (_: any, { input }: AddUserArgs) => {
-            const user = await User.create(input);
+        addUser: async (_parent: any, { username, email, password }: AddUserArgs) => {
+            const user = await User.create({ username, email, password });
             const token = signToken(user.username, user.email, user._id);
 
             return { token, user };
         },
 
-        saveBook: async (_: any, { input }: SaveBookArgs, context: any) => {
+        saveBook: async (_parent: any, { input }: SaveBookArgs, context: any) => {
             if (context.user) {
                 const updatedUser = await User.findOneAndUpdate(
                     { _id: context.user._id },
@@ -88,13 +84,13 @@ interface RemoveBookArgs {
             throw new AuthenticationError('You need to be logged in!');
         },
 
-        removeBook: async (_: any, { bookId }: RemoveBookArgs, context: any) => {
+        removeBook: async (_parent: any, { bookId }: RemoveBookArgs, context: any) => {
             if (context.user) {
                 const updatedUser = await User.findOneAndUpdate(
                     { _id: context.user._id },
                     { $pull: { savedBooks: { bookId } } },
                     { new: true }
-                );
+                ).populate('savedBooks');
 
                 if (!updatedUser) {
                     throw new AuthenticationError('Couldn\'t find user with this id!');

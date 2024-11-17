@@ -3,7 +3,13 @@ import { GraphQLError } from 'graphql';
 import dotenv from 'dotenv';
 dotenv.config();
 
-export const authenticateToken = ({ req }: any) => {
+interface JwtPayload {
+  username: string;
+  email: string;
+  _id: string;
+}
+
+export const authenticateToken = async ({ req }: {req: any}) => {
   
   let token = req.body.token || req.query.token || req.headers.authorization;
 
@@ -16,25 +22,34 @@ export const authenticateToken = ({ req }: any) => {
   }
 
   try {
-    const { data }:any = jwt.verify(token, process.env.JWT_SECRET_KEY || '', { maxAge: '1hr'});
+    const { data }: any = jwt.verify(token, process.env.JWT_SECRET_KEY! as string) as JwtPayload;
     req.user = data;
   } catch (error) {
-    console.log('Invalid token');
+    throw new AuthenticationError('Invalid token');
   }
 
   return req;
 };
 
-export const signToken = (username: string, email: string, _id: unknown) => {
+export const signToken = (username: string, email: string, _id: unknown): string => {
   const payload = { username, email, _id };
   const secretKey = process.env.JWT_SECRET_KEY || '';
 
-  return jwt.sign(payload, secretKey, { expiresIn: '1h' });
+  if (!secretKey) {
+    throw new Error('JWT_SECRET_KEY not configured');
+}
+
+  return jwt.sign({ data: payload }, secretKey, { expiresIn: '1h' });
 };
 
 export class AuthenticationError extends GraphQLError {
   constructor(message: string) {
-    super(message, undefined, undefined, undefined, undefined, undefined, { code: 'UNAUTHENTICATED' });
-    Object.defineProperty(this, 'name', { value: 'AuthenticationError' });
+    super(message, {
+      extensions: { 
+        code: 'UNAUTHENTICATED',
+        http: { status: 401 }
+      }
+});
   }
-};
+}
+
