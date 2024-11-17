@@ -2,16 +2,26 @@
 import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
-
-import { loginUser } from '../utils/API';
+import { useMutation } from '@apollo/client';
+import { LOGIN_USER } from '../utils/mutations';
 import Auth from '../utils/auth';
-import type { User } from '../models/User';
+
+interface LoginFormProps {
+  handleModalClose: () => void;
+}
+
+interface LoginFormData {
+  email: string;
+  password: string;
+}
 
 // biome-ignore lint/correctness/noEmptyPattern: <explanation>
-const LoginForm = ({}: { handleModalClose: () => void }) => {
-  const [userFormData, setUserFormData] = useState<User>({ username: '', email: '', password: '', savedBooks: [] });
-  const [validated] = useState(false);
+const LoginForm = ({ handleModalClose }: LoginFormProps) => {
+  const [userFormData, setUserFormData] = useState<LoginFormData>({ email: '', password: '' });
+  const [validated, setValidated] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
+
+  const [loginUser] = useMutation(LOGIN_USER);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -26,27 +36,33 @@ const LoginForm = ({}: { handleModalClose: () => void }) => {
     if (form.checkValidity() === false) {
       event.preventDefault();
       event.stopPropagation();
+      setValidated(true);
+      return;
     }
 
     try {
-      const response = await loginUser(userFormData);
-
-      if (!response.ok) {
-        throw new Error('something went wrong!');
+      const { data } = await loginUser({
+        variables: { 
+          email: userFormData.email,
+          password: userFormData.password
+         },
+      });
+  
+      const token = data?.loginUser?.token;
+      if (token) {
+        Auth.login(token);
+        handleModalClose();
+      } else {
+        throw new Error('Token not found!');
       }
-
-      const { token } = await response.json();
-      Auth.login(token);
     } catch (err) {
       console.error(err);
       setShowAlert(true);
     }
 
     setUserFormData({
-      username: '',
       email: '',
-      password: '',
-      savedBooks: [],
+      password: ''
     });
   };
 

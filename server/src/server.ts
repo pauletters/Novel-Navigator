@@ -7,12 +7,22 @@ import { expressMiddleware } from '@apollo/server/express4';
 import { typeDefs, resolvers } from './schemas/index.js';
 import { authenticateToken } from './utils/auth.js';
 
-const server = new ApolloServer({
-  typeDefs,
-  resolvers
-});
+
 
 const startApolloServer = async () => {
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    formatError: (err) => {
+      console.error('GraphQL Error:', err);
+      return { 
+        message: err.message,
+        code: err.extensions?.code || 'INTERNAL_SERVER_ERROR',
+      };
+    },
+  });
+
+  try {
   await server.start();
   await db();
 
@@ -38,9 +48,13 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.listen(PORT, () => {
-  console.log(`API server running on port ${PORT}!`);
-  console.log(`Use GraphQL at http://localhost:${PORT}/graphql`);
+  console.log(`🚀 Server ready at http://localhost:${PORT}`);
+  console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
 });
+} catch (error) {
+console.error('Failed to start server:', error);
+process.exit(1);
+}
 };
 
 startApolloServer();

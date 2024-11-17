@@ -6,6 +6,8 @@ export interface GoogleAPIVolumeInfo {
     smallThumbnail: string;
     thumbnail: string;
   };
+  previewLink?: string;
+  canonicalVolumeLink?: string;
 }
 
 export interface GoogleAPIBook {
