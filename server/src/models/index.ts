@@ -1,4 +1,6 @@
 import User from './User.js';
-import Book from './Book.js';
+import { bookSchema, type BookDocument } from './Book.js';
+import type { UserDocument } from './User.js';
 
-export default { User, Book };
+export { User, bookSchema };
+export type { BookDocument, UserDocument };

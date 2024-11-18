@@ -23,12 +23,26 @@ const SignupForm = ( { handleModalClose }: SignupFormProps) => {
   const [validated, setValidated] = useState(false);
   // set state for alert
   const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
 
-  const [addUser] = useMutation(ADD_USER);
+  const [addUser] = useMutation(ADD_USER, {
+    onError: (error) => {
+      console.log('Mutation error:', error);
+      const message = error.graphQLErrors?.[0]?.message || error.message || 'Something went wrong with your signup!';
+
+        setAlertMessage(message);
+        setShowAlert(true);
+    }
+  });
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setUserFormData({ ...userFormData, [name]: value });
+
+    if (showAlert) {
+      setShowAlert(false);
+      setAlertMessage('');
+    }
   };
 
   const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -37,31 +51,26 @@ const SignupForm = ( { handleModalClose }: SignupFormProps) => {
     // check if form has everything (as per react-bootstrap docs)
     const form = event.currentTarget;
     if (form.checkValidity() === false) {
-      event.preventDefault();
       event.stopPropagation();
       setValidated(true);
       return;
     }
 
     try {
-    const { data } = await addUser({
-      variables: { 
-        username: userFormData.username,
-        email: userFormData.email,
-        password: userFormData.password
-       },
-    });
+      const { data } = await addUser({
+        variables: {
+          username: userFormData.username,
+          email: userFormData.email,
+          password: userFormData.password,
+        },
+      });
 
-    const token = data?.addUser?.token;
-    if (token) {
-      Auth.login(token);
-      handleModalClose();
-      } else {
-      throw new Error('something went wrong!');
-    }
+      if (data?.addUser?.token) {
+        Auth.login(data.addUser.token);
+        handleModalClose();
+      }
     } catch (err) {
-      console.error(err);
-      setShowAlert(true);
+      console.error('Form submission error:', err);
     }
 
     setUserFormData({
@@ -77,7 +86,7 @@ const SignupForm = ( { handleModalClose }: SignupFormProps) => {
       <Form noValidate validated={validated} onSubmit={handleFormSubmit}>
         {/* show alert if server response is bad */}
         <Alert dismissible onClose={() => setShowAlert(false)} show={showAlert} variant='danger'>
-          Something went wrong with your signup!
+          {alertMessage}
         </Alert>
 
         <Form.Group className='mb-3'>

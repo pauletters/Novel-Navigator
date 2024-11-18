@@ -6,37 +6,45 @@ import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { typeDefs, resolvers } from './schemas/index.js';
 import { authenticateToken } from './utils/auth.js';
-
+import cors from 'cors';
+import { GraphQLFormattedError } from 'graphql';
 
 
 const startApolloServer = async () => {
+
   const server = new ApolloServer({
     typeDefs,
     resolvers,
-    formatError: (err) => {
-      console.error('GraphQL Error:', err);
-      return { 
-        message: err.message,
-        code: err.extensions?.code || 'INTERNAL_SERVER_ERROR',
-      };
+    formatError: (formattedError: GraphQLFormattedError) => {
+      console.error('GraphQL Error Details:', {
+        message: formattedError.message,
+        locations: formattedError.locations,
+        path: formattedError.path,
+        extensions: formattedError.extensions
+      });
+      return formattedError;
     },
   });
 
-  try {
   await server.start();
-  await db();
+  console.log('Apollo Server successfully started!'); 
 
-const app = express();
-const PORT = process.env.PORT || 3001;
+  const app = express();
+  const PORT = process.env.PORT || 3001;
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json());
 
-app.use('/graphql', expressMiddleware(server as any,
-  {
-    context: authenticateToken as any
-  }
-));
+  app.use(
+    '/graphql',
+    cors({
+      origin: ['http://localhost:3000', 'http://localhost:5173'],
+      credentials: true,
+    }),
+    expressMiddleware(server, {
+      context: async ({ req }) => authenticateToken({ req })
+    })
+  );
 
 // if we're in production, serve client/build as static assets
 if (process.env.NODE_ENV === 'production') {
@@ -47,14 +55,16 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+await db();
+console.log('Connected to the database!');
+
 app.listen(PORT, () => {
   console.log(`🚀 Server ready at http://localhost:${PORT}`);
   console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
 });
-} catch (error) {
-console.error('Failed to start server:', error);
-process.exit(1);
 }
-};
 
-startApolloServer();
+startApolloServer().catch((err) => {
+  console.error('Error starting server:', err);
+  process.exit(1);
+});
