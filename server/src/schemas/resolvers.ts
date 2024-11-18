@@ -1,6 +1,8 @@
-import Book from '../models/Book.js';
+import type { UserDocument, BookDocument } from '../models/index.js';
 import User from '../models/User.js';
 import { signToken, AuthenticationError } from '../utils/auth.js';
+import { GraphQLError } from 'graphql';
+
 
 interface AddUserArgs {
         username: string;
@@ -13,31 +15,36 @@ interface LoginArgs {
         password: string;
 }
 
-interface SaveBookArgs {
-    input: {
-        authors: string[];
-        description: string;
-        bookId: string;
-        image: string;
-        link: string;
-        title: string;
-    }
-}
+interface SaveBookArgs extends BookDocument{}
 
 interface RemoveBookArgs {
     bookId: string;
 }
 
+interface Context {
+    user?: {
+        _id: string;
+        username: string;
+        email: string;
+    };
+}
+
+class UserInputError extends GraphQLError {
+    constructor(message: string) {
+      super(message, {
+        extensions: {
+          code: 'BAD_USER_INPUT',
+        },
+      });
+    }
+  }
+
  const resolvers = {
     Query: {
-        user: async () => {
-            return User.find().populate('savedBooks');
-        },
-        me: async (_parent: any, _args: any, context: any) => {
+        me: async (_parent: unknown, _args: unknown, context: Context): Promise<UserDocument | null> => {
             if (context.user) {
                 const userData = await User.findOne({ _id: context.user._id })
                     .select('-__v -password')
-                    .populate('savedBooks');
 
                 return userData;
             }
@@ -46,7 +53,8 @@ interface RemoveBookArgs {
         },
     },
     Mutation: {
-        loginUser: async (_parent: any, { email, password }: LoginArgs) => {
+        loginUser: async (_parent: unknown, { email, password }: LoginArgs) => {
+            try{
             const user = await User.findOne({ email });
 
             if (!user) {
@@ -62,16 +70,54 @@ interface RemoveBookArgs {
             const token = signToken(user.username, user.email, user._id);
 
             return { token, user };
+        } catch (err) {
+            if (err instanceof AuthenticationError) {
+                throw err;
+            }
+            console.error('Error logging in user:', err);
+            throw new GraphQLError('Error logging in user', {
+                extensions: { code: 'INTERNAL_SERVER_ERROR' }
+            });
+        }
         },
 
-        addUser: async (_parent: any, { username, email, password }: AddUserArgs) => {
+        addUser: async (_parent: unknown, { username, email, password }: AddUserArgs) => {
+            try {
+                const existingUser = await User.findOne({
+                    $or: [{ username }, { email }],
+                });
+
+                if (existingUser) {
+                    if (existingUser.email === email) {
+                    throw new UserInputError(
+                           'This email is already in use'); 
+                    }
+                     throw new UserInputError('This username is already taken');
+                    }
+
             const user = await User.create({ username, email, password });
+            
+            if (!user) {
+                throw new GraphQLError('Failed to create user');
+            }
+
             const token = signToken(user.username, user.email, user._id);
-
             return { token, user };
-        },
+        } catch (err) {
+            console.error('Add user error:', err);
 
-        saveBook: async (_parent: any, { input }: SaveBookArgs, context: any) => {
+            if (err instanceof UserInputError || err instanceof GraphQLError) {
+                throw err;
+            }
+            
+            throw new GraphQLError('Error creating user', {
+                extensions: { code: 'INTERNAL_SERVER_ERROR' }
+            });
+        }
+    },
+
+        saveBook: async (_parent: unknown, { input }: { input: SaveBookArgs }, context: Context):
+        Promise<UserDocument | null> => {
             if (context.user) {
                 const updatedUser = await User.findOneAndUpdate(
                     { _id: context.user._id },
@@ -84,23 +130,17 @@ interface RemoveBookArgs {
             throw new AuthenticationError('You need to be logged in!');
         },
 
-        removeBook: async (_parent: any, { bookId }: RemoveBookArgs, context: any) => {
+        removeBook: async (_parent: unknown, { bookId }: RemoveBookArgs, context: Context) => {
             if (context.user) {
                 const updatedUser = await User.findOneAndUpdate(
                     { _id: context.user._id },
                     { $pull: { savedBooks: { bookId } } },
                     { new: true }
-                ).populate('savedBooks');
+                );
 
                 if (!updatedUser) {
                     throw new AuthenticationError('Couldn\'t find user with this id!');
                 }
-
-                await Book.findOneAndUpdate(
-                    { bookId },
-                    { $pull: { savedBooks: { bookId } } },
-                    { new: true }
-                );
 
                 return updatedUser;
             }

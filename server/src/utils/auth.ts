@@ -4,13 +4,24 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 interface JwtPayload {
+  data: {
   username: string;
   email: string;
   _id: string;
+  };
 }
 
-export const authenticateToken = async ({ req }: {req: any}) => {
+const SECRET_KEY = process.env.JWT_SECRET_KEY || '';
+
+export const authenticateToken = ({ req }: {req: any}) => {
   
+  if (
+    req.body.operationName === 'loginUser' ||
+    req.body.operationName === 'addUser'
+  ) {
+    return {};
+  }
+
   let token = req.body.token || req.query.token || req.headers.authorization;
 
   if (req.headers.authorization) {
@@ -18,28 +29,34 @@ export const authenticateToken = async ({ req }: {req: any}) => {
   }
 
   if (!token) {
-    return req;
+    return {}; 
   }
 
   try {
-    const { data }: any = jwt.verify(token, process.env.JWT_SECRET_KEY! as string) as JwtPayload;
-    req.user = data;
-  } catch (error) {
-    throw new AuthenticationError('Invalid token');
-  }
+    
+    if (!SECRET_KEY) {
+      throw new Error('JWT_SECRET is not configured');
+    }
 
-  return req;
+    const { data } = jwt.verify(token, SECRET_KEY) as JwtPayload;
+    return { user: data };
+  } catch (err) {
+    console.log('Invalid token', err);
+    return {};  
+  }
 };
 
 export const signToken = (username: string, email: string, _id: unknown): string => {
-  const payload = { username, email, _id };
-  const secretKey = process.env.JWT_SECRET_KEY || '';
 
-  if (!secretKey) {
+  if (!SECRET_KEY) {
     throw new Error('JWT_SECRET_KEY not configured');
 }
 
-  return jwt.sign({ data: payload }, secretKey, { expiresIn: '1h' });
+  return jwt.sign({ data: { username, email, _id },
+    exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour
+  }, 
+  SECRET_KEY
+);
 };
 
 export class AuthenticationError extends GraphQLError {

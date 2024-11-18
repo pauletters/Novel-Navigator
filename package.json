@@ -8,12 +8,15 @@
     "develop": "concurrently \"cd server && npm run watch\" \"cd client && npm run dev\"",
     "install": "cd server && npm i && cd ../client && npm i",
     "build": "concurrently \"cd server && npm run build\" \"cd client && npm run build\"",
-    "render-build": "npm install && npm run build"
+    "render-build": "npm install && npm run build",
+    "clean": "cd server && if exist dist rmdir /s /q dist && cd ../client && if exist dist rmdir /s /q dist",
+    "dev": "npm run clean && npm run build && npm run develop"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "concurrently": "^8.2.0"
   },
   "dependencies": {
