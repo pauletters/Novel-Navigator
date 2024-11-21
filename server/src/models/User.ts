@@ -1,7 +1,5 @@
 import { Schema, model } from 'mongoose';
 import bcrypt from 'bcrypt';
-
-// import schema from Book.js
 import { bookSchema, type BookDocument } from './Book.js';
 
 export interface UserDocument {
@@ -14,6 +12,7 @@ export interface UserDocument {
   bookCount: number;
 }
 
+// Schema for User
 const userSchema = new Schema<UserDocument>(
   {
     username: {

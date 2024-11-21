@@ -11,6 +11,9 @@ import { Outlet } from 'react-router-dom';
 import { onError } from '@apollo/client/link/error';
 import Navbar from './components/Navbar';
 
+// Construct our main GraphQL API endpoint
+// This is the entry point for our application
+// errorLink is a terminating link that will be executed when an error occurs in the link chain
 const errorLink = onError(({ graphQLErrors, networkError }) => {
   if (graphQLErrors) {
     graphQLErrors.forEach(({ message, locations, path }) =>
@@ -23,7 +26,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
     console.error(`[Network error]: ${networkError}`);
   }
 });
-
+// Create an http link
 const httpLink = createHttpLink({
   uri: process.env.NODE_ENV === 'production'
   ? '/graphql'
@@ -42,6 +45,7 @@ const authLink = setContext((_, { headers }) => {
   };
 });
 
+// Instantiate Apollo Client
 const client = new ApolloClient({
   link: from([authLink, errorLink, httpLink]),
   cache: new InMemoryCache(),

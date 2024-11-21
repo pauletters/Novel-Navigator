@@ -7,6 +7,7 @@ interface PaginationButtonsProps {
   onPageChange: (pageNumber: number) => void;
 }
 
+// Handles pagination buttons used to navigate through a list of pages
 const PaginationButtons = ({ 
   currentPage, 
   totalItems, 

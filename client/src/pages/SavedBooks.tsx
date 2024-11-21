@@ -8,15 +8,18 @@ import type { Book } from '../models/Book.js';
 import { useState } from 'react';
 import BookDetailsModal from '../components/BookDetailsModal';
 
+// Displays the user's saved books
  const SavedBooks = () => { 
    const [selectedBook, setSelectedBook] = useState<Book | null>(null);
    const [showModal, setShowModal] = useState(false);
 
+  //  create state to hold saved book data
    const handleShowModal = (book: Book) => {
     setSelectedBook(book);
     setShowModal(true);
   };
 
+  // create state to hold modal display
   const handleCloseModal = () => {
     setSelectedBook(null);
     setShowModal(false);
