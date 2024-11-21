@@ -29,7 +29,8 @@ const startApolloServer = async () => {
   });
 
   await server.start();
-  console.log('Apollo Server successfully started!'); 
+  await db();
+console.log('Connected to the database!');
 
   const app = express();
   const PORT = process.env.PORT || 3001;
@@ -57,14 +58,13 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-await db();
-console.log('Connected to the database!');
-
 app.listen(PORT, () => {
   console.log(`🚀 Server ready at http://localhost:${PORT}`);
   console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
 });
 }
+  console.log('Apollo Server successfully started!');
+
 
 startApolloServer().catch((err) => {
   console.error('Error starting server:', err);
