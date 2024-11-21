@@ -305,3 +305,31 @@ h4 {
   background-color: #138496;
   border-color: #117a8b;
 }
+
+.pagination {
+  margin: 2rem 0;
+}
+
+.pagination .page-item .page-link {
+  color: #17a2b8;
+  border-color: #17a2b8;
+  background-color: white;
+  transition: all 0.3s ease;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #17a2b8;
+  border-color: #17a2b8;
+  color: white;
+}
+
+.pagination .page-item .page-link:hover {
+  background-color: #17a2b8;
+  border-color: #17a2b8;
+  color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+  color: #6c757d;
+  border-color: #dee2e6;
+}

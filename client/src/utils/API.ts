@@ -1,6 +1,12 @@
 import type { User } from '../models/User.js';
 import type { Book } from '../models/Book.js';
 
+interface searchParams {
+  query: string;
+  maxResults?: number;
+  startIndex?: number;
+}
+
 // route to get logged in user's info (needs the token)
 export const getMe = (token: string) => {
   return fetch('/api/users/me', {
@@ -55,6 +61,10 @@ export const deleteBook = (bookId: string, token: string) => {
 
 // make a search to google books api
 // https://www.googleapis.com/books/v1/volumes?q=harry+potter
-export const searchGoogleBooks = (query: string) => {
-  return fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}`);
+export const searchGoogleBooks = ({ 
+  query, 
+  maxResults = 30,
+  startIndex = 0 
+}: searchParams) => {
+  return fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=${maxResults}&startIndex=${startIndex}`);
 };
