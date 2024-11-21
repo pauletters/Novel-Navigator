@@ -5,7 +5,6 @@ import {
   Col,
   Form,
   Button,
-  Card,
   Row,
   Toast,
   ToastContainer
@@ -14,15 +13,21 @@ import BookDetailsModal from '../components/BookDetailsModal';
 import Auth from '../utils/auth';
 import { searchGoogleBooks } from '../utils/API';
 import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
-import type { Book } from '../models/Book';
-import type { GoogleAPIBook } from '../models/GoogleAPIBook';
+import { Book, filterBooks, mapBookData } from '../models/Book';
 import { useMutation } from '@apollo/client';
 import { SAVE_BOOK } from '../utils/mutations';
+import PaginationButtons from '../components/PaginationButtons';
+import FilteredBooksList from '../components/FilteredBooksList';
 
 const SearchBooks = () => {
 
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const ITEMS_PER_PAGE = 30;
+  const FETCH_AMOUNT = 40; // Fetching more than 30 to account for filtering
+  const [currentSearchTerm, setCurrentSearchTerm] = useState('');
 
   // Modal handlers
   const handleShowModal = (book: Book) => {
@@ -59,27 +64,72 @@ const SearchBooks = () => {
     }
 
     try {
-      const response = await searchGoogleBooks(searchInput);
+      setCurrentSearchTerm(searchInput);
+      const response = await searchGoogleBooks({
+        query: searchInput,
+        maxResults: FETCH_AMOUNT,
+        startIndex: 0
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch books');
       }
 
-      const { items } = await response.json();
+      const { items, totalItems } = await response.json();
 
-      const bookData = items.map((book: GoogleAPIBook) => ({
-        bookId: book.id,
-        authors: book.volumeInfo.authors || ['No author to display'],
-        title: book.volumeInfo.title,
-        description: book.volumeInfo.description || 'No description available',
-        image: book.volumeInfo.imageLinks?.thumbnail || '',
-        link: book.volumeInfo.previewLink || book.volumeInfo.canonicalVolumeLink ||''
-      }));
+      if (!items) {
+        setSearchedBooks([]);
+        setTotalItems(0);
+        return;
+      }
+
+      const filteredBooks = filterBooks(items);
+      const bookData = filteredBooks
+      .map(mapBookData)
+      .slice(0, ITEMS_PER_PAGE);
 
       setSearchedBooks(bookData);
+      setTotalItems(totalItems);
+      setCurrentPage(1);
       setSearchInput('');
     } catch (err) {
       console.error('Error searching books:', err);
+    }
+  };
+
+  const handlePageChange = async (pageNumber: number) => {
+    try {
+      if (!currentSearchTerm) {
+        return;
+      }
+  
+      const response = await searchGoogleBooks({
+        query: currentSearchTerm,
+        maxResults: FETCH_AMOUNT,
+        startIndex: (pageNumber - 1) * ITEMS_PER_PAGE
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to fetch books');
+      }
+  
+      const { items } = await response.json();
+  
+      if (!items || items.length === 0) {
+        console.log('No more results found');
+        return;
+      }
+  
+      const filteredBooks = filterBooks(items);
+      const bookData = filteredBooks
+      .map(mapBookData)
+      .slice(0, ITEMS_PER_PAGE);
+  
+      setSearchedBooks(bookData);
+      setCurrentPage(pageNumber);
+      window.scrollTo(0, 0);
+    } catch (err) {
+      console.error('Error fetching page:', err);
     }
   };
 
@@ -200,62 +250,28 @@ const SearchBooks = () => {
       <Container>
         <h2 className='pt-5'>
           {searchedBooks.length
-            ? `Viewing ${searchedBooks.length} results:`
+            ? `Viewing ${searchedBooks.length} results out of ${totalItems}:`
             : 'Search for a book to begin'}
         </h2>
-        <Row className='g-4'>
-          {searchedBooks.map((book) => {
-            const isBookSaved = savedBookIds.includes(book.bookId);
-            console.log(`Book ${book.bookId} saved status:`, isBookSaved);
-            return (
-              <Col md="4" key={book.bookId}>
-                <Card 
-                className='h-100 d-flex flex-column hover-shadow' border='dark'
-                 onClick={() => handleShowModal(book)} 
-                 style={{ cursor: 'pointer' }}>
-                  {book.image ? (
-                    <div style={{ height: '300px', overflow: 'hidden' }}>
-                    <Card.Img 
-                      src={book.image} 
-                      alt={`The cover for ${book.title}`} 
-                      variant='top'
-                      style={{ 
-                        objectFit: 'cover',
-                        height: '100%',
-                        width: '100%'
-                      }} 
-                    />
-                  </div>
-                ) : null}
-                  <Card.Body className='d-flex flex-column'>
-                    <Card.Title className='flex-grow-0'>{book.title}</Card.Title>
-                    <p className='small flex-grow-0'>Authors: {book.authors}</p>
-                    <Card.Text className='flex-grow-1' style={{
-                      overflow: 'hidden',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 4,
-                      WebkitBoxOrient: 'vertical'
-                    }}>
-                      {book.description}
-                      </Card.Text>
-                    {Auth.loggedIn() && (
-                      <Button
-                        disabled={isBookSaved || saveLoading}
-                        className={`mt-auto w-100 ${isBookSaved ? 'btn-secondary' : 'btn-info'}`}
-                        onClick={(e) => {
-                        e.stopPropagation(); // Prevents modal from opening
-                        if (!isBookSaved && !saveLoading) {
-                        handleSaveBook(book.bookId)}
-                        }}>
-                        {isBookSaved ? ('📚 Added to Library') : saveLoading ? ('Saving...') : ('📖 Save this Book!')}
-                      </Button>
-                    )}
-                  </Card.Body>
-                </Card>
-              </Col>
-            );
-          })}
-        </Row>
+
+        <FilteredBooksList
+          books={searchedBooks}
+          savedBookIds={savedBookIds}
+          saveLoading={saveLoading}
+          onSaveBook={handleSaveBook}
+          onShowModal={handleShowModal}
+          isAuthenticated={Auth.loggedIn()}
+        />
+        
+        {searchedBooks.length > 0 && (
+          <PaginationButtons
+            currentPage={currentPage}
+            totalItems={totalItems}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={handlePageChange}
+          />
+        )}
+
       </Container>
 
       <BookDetailsModal
