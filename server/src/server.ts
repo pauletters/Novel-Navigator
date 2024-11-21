@@ -8,7 +8,8 @@ import { typeDefs, resolvers } from './schemas/index.js';
 import { authenticateToken } from './utils/auth.js';
 import cors from 'cors';
 import { GraphQLFormattedError } from 'graphql';
-
+import { fileURLToPath } from 'node:url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const startApolloServer = async () => {
 
