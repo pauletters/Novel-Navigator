@@ -1,5 +1,9 @@
 body {
   font-family: 'Rubik', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fa;
+  background-image: none;
 }
 
 h1,
@@ -9,6 +13,24 @@ h4,
 h5,
 h6 {
   font-family: 'Rubik Mono One', sans-serif;
+}
+
+/* Header styles */
+
+.text-light h1 {
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  letter-spacing: 2px;
+}
+
+.text-light h4 {
+  font-weight: 300;
+  letter-spacing: 1px;
+  opacity: 0.9;
+}
+
+.Navbar {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%), 
+  linear-gradient(rgba(0,0,0,0.2) 0%, transparent 10%) !important;
 }
 
 .navLinkSearch {
@@ -96,13 +118,14 @@ h4 {
 }
 
 .hover-shadow {
-  transition: all 0.3s ease;
-  border: 1px solid rgba(0,0,0,0.125);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0,0,0,0.1);
+  background: white;
 }
 
 .hover-shadow:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 20px rgba(0,0,0,0.15);
 }
 
 .text-light h4 {
@@ -111,8 +134,19 @@ h4 {
 }
 
 .card-title {
+  color: #2c3e50;
+  font-weight: 600;
   font-size: 1.25rem;
   margin-bottom: 0.5rem;
+}
+
+.card-body {
+  background: linear-gradient(to bottom, white 0%, #f8f9fa 100%);
+}
+
+.small {
+  color: #3d3e3f;
+  font-style:italic;
 }
 
 .card {
@@ -152,10 +186,9 @@ h4 {
 }
 
 .btn-danger {
-  background-color: #dc3545;
-  border-color: #dc3545;
-  color: white;
-  transition: all 0.2s ease;
+  background: linear-gradient(45deg, #dc3545, #e74c3c);
+  border: none;
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
 }
 
 .btn-danger:hover {
@@ -307,20 +340,22 @@ h4 {
 }
 
 .pagination {
-  margin: 2rem 0;
+  gap: 5px;
+  padding: 1rem;
 }
 
 .pagination .page-item .page-link {
-  color: #17a2b8;
-  border-color: #17a2b8;
-  background-color: white;
-  transition: all 0.3s ease;
+  border-radius: 6px;
+  border: none;
+  color: #2c3e50;
+  transition: all 0.2s ease;
+  font-weight: 500;
 }
 
 .pagination .page-item.active .page-link {
   background-color: #17a2b8;
-  border-color: #17a2b8;
-  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
 }
 
 .pagination .page-item .page-link:hover {

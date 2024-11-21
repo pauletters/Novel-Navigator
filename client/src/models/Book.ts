@@ -9,6 +9,7 @@ export interface Book {
   title: string;
 }
 
+// Filters out books that don't have a thumbnail, description, title, or author
 export const filterBooks = (books: GoogleAPIBook[]) => {
   let filtered = books.filter(book => (
     book.volumeInfo.imageLinks?.thumbnail &&

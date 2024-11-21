@@ -10,6 +10,7 @@ interface FilteredBooksListProps {
   isAuthenticated: boolean;
 }
 
+// Filters the books list and displays the books in a grid layout
 const FilteredBooksList = ({
   books,
   savedBookIds,

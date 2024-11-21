@@ -11,7 +11,7 @@ import {
 } from 'react-bootstrap';
 import BookDetailsModal from '../components/BookDetailsModal';
 import Auth from '../utils/auth';
-import { searchGoogleBooks } from '../utils/API';
+import { searchGoogleBooks } from '../utils/googleBooksAPI';
 import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
 import { Book, filterBooks, mapBookData } from '../models/Book';
 import { useMutation } from '@apollo/client';
@@ -64,7 +64,7 @@ const SearchBooks = () => {
     }
 
     try {
-      setCurrentSearchTerm(searchInput);
+      setCurrentSearchTerm(searchInput);  // Save search term for pagination
       const response = await searchGoogleBooks({
         query: searchInput,
         maxResults: FETCH_AMOUNT,
@@ -83,6 +83,8 @@ const SearchBooks = () => {
         return;
       }
 
+      // Filter out books that don't have a thumbnail, description, title, or author
+      // and map the data to our Book model
       const filteredBooks = filterBooks(items);
       const bookData = filteredBooks
       .map(mapBookData)
@@ -97,6 +99,7 @@ const SearchBooks = () => {
     }
   };
 
+  // create method to handle pagination change
   const handlePageChange = async (pageNumber: number) => {
     try {
       if (!currentSearchTerm) {
@@ -160,11 +163,11 @@ const SearchBooks = () => {
     }
   });
 
-  // Loads saved book IDs on component mount
+  // Loads saved book IDs on component mount, updates when user changes
   useEffect(() => {
     const savedIds = getSavedBookIds();
     setSavedBookIds(savedIds);
-  }, []);
+  }, [Auth.loggedIn()]);
 
   // Saves to localStorage whenever savedBookIds changes
   useEffect(() => {

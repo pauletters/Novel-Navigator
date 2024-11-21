@@ -12,6 +12,7 @@ import { GraphQLFormattedError } from 'graphql';
 
 const startApolloServer = async () => {
 
+  // Create a new ApolloServer instance with the schema definition and resolvers
   const server = new ApolloServer({
     typeDefs,
     resolvers,

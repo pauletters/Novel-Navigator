@@ -13,6 +13,7 @@ interface JwtPayload {
 
 const SECRET_KEY = process.env.JWT_SECRET_KEY || '';
 
+// Function to authenticate token and return user data
 export const authenticateToken = ({ req }: {req: any}) => {
   
   if (
@@ -46,6 +47,7 @@ export const authenticateToken = ({ req }: {req: any}) => {
   }
 };
 
+// Function to sign a token with user data
 export const signToken = (username: string, email: string, _id: unknown): string => {
 
   if (!SECRET_KEY) {
