@@ -4,10 +4,10 @@
   "description": "",
   "main": "server/server.js",
   "scripts": {
-    "start": "node server/dist/server.js",
+    "start": "npm run build && npm run develop",
     "develop": "concurrently \"cd server && npm run watch\" \"cd client && npm run dev\"",
     "install": "cd server && npm i && cd ../client && npm i",
-    "build": "cd server && npm run build && cd ../client && npm run build",
+    "build": "concurrently \"cd server && npm run build\" \"cd client && npm run build\"",
     "render-build": "npm install && npm run build",
     "clean": "cd server && if exist dist rmdir /s /q dist && cd ../client && if exist dist rmdir /s /q dist",
     "dev": "npm run clean && npm run build && npm run develop"

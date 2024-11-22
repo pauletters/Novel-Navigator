@@ -9,37 +9,39 @@ import { authenticateToken } from './utils/auth.js';
 import cors from 'cors';
 import { GraphQLFormattedError } from 'graphql';
 import { fileURLToPath } from 'node:url';
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const startApolloServer = async () => {
-  const app = express();
-  const PORT = parseInt(process.env.PORT || '3001', 10);
 
   // Create a new ApolloServer instance with the schema definition and resolvers
   const server = new ApolloServer({
     typeDefs,
     resolvers,
     formatError: (formattedError: GraphQLFormattedError) => {
-      console.error('GraphQL Error Details:', formattedError);
+      console.error('GraphQL Error Details:', {
+        message: formattedError.message,
+        locations: formattedError.locations,
+        path: formattedError.path,
+        extensions: formattedError.extensions
+      });
       return formattedError;
     },
   });
 
-  // Start the server
   await server.start();
-  console.log('Apollo Server started successfully');
+  await db();
+console.log('Connected to the database!');
 
-// Apply the ApolloServer instance as middleware to the Express server
+  const app = express();
+  const PORT = process.env.PORT || 3001;
+
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
 
   app.use(
     '/graphql',
     cors({
-      origin: ['http://localhost:3000', 
-        'http://localhost:5173', 
-        'https://novel-navigator.onrender.com'],
+      origin: ['http://localhost:3000', 'http://localhost:5173'],
       credentials: true,
     }),
     expressMiddleware(server, {
@@ -56,19 +58,15 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-try {
-  await db();
-  console.log('Connected to MongoDB!');
-
-
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server ready on port ${PORT}`);
-  console.log(`🚀 GraphQL ready at http://0.0.0.0:${PORT}/graphql`);
+app.listen(PORT, () => {
+  console.log(`🚀 Server ready at http://localhost:${PORT}`);
+  console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
 });
-} catch (error) {
-  console.error('Error starting server:', error);
-  process.exit(1);
 }
-};
+  console.log('Apollo Server successfully started!');
 
-startApolloServer();
+
+startApolloServer().catch((err) => {
+  console.error('Error starting server:', err);
+  process.exit(1);
+});
