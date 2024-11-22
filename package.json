@@ -9,7 +9,6 @@
     "install": "cd server && npm i && cd ../client && npm i",
     "build": "concurrently \"cd server && npm run build\" \"cd client && npm run build\"",
     "render-build": "npm install && npm run build",
-    "clean": "cd server && if exist dist rmdir /s /q dist && cd ../client && if exist dist rmdir /s /q dist",
     "dev": "npm run clean && npm run build && npm run develop"
   },
   "keywords": [],
@@ -20,8 +19,5 @@
     "@types/cors": "^2.8.17",
     "@types/jsonwebtoken": "^9.0.7",
     "concurrently": "^8.2.0"
-  },
-  "dependencies": {
-    "@apollo/client": "^3.11.10"
   }
 }
