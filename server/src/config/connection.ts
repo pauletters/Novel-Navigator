@@ -1,10 +1,14 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-dotenv.config();
+import 'dotenv/config';
+
 
 const db = async (): Promise<typeof mongoose.connection> => {
     try {
-      const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/novelnavigator');
+      if (!process.env.MONGODB_URI) {
+        throw new Error('MONGODB_URI is not defined in environment variables');
+      }
+      
+      const conn = await mongoose.connect(process.env.MONGODB_URI);
       console.log(`MongoDB connected: ${conn.connection.host}`);
       return conn.connection;
     } catch (error) {
