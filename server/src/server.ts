@@ -51,10 +51,15 @@ console.log('Connected to the database!');
 
 // if we're in production, serve client/build as static assets
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/dist')));
+  const clientDistPath = path.join(__dirname, '../../client/dist');
+    console.log('Static files being served from:', clientDistPath);
+    
+    app.use(express.static(clientDistPath));
 
-  app.get('*', (_req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+    app.get('*', (_req: Request, res: Response) => {
+      const indexPath = path.join(clientDistPath, 'index.html');
+      console.log('Attempting to serve index.html from:', indexPath);
+      res.sendFile(indexPath);
   });
 }
 
