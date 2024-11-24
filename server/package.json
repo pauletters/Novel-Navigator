@@ -29,7 +29,6 @@
     "@types/cors": "^2.8.13",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.8",
-    "dotenv": "^16.4.5",
     "nodemon": "^3.1.0",
     "typescript": "^5.4.5"
   }
